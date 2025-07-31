@@ -25,18 +25,18 @@ exports.handler = async (event, context) => {
       throw new Error('Missing Airtable configuration');
     }
 
-    const { title, details, author } = JSON.parse(event.body);
+    const { questionId, content, author } = JSON.parse(event.body);
 
-    if (!title || !author) {
+    if (!questionId || !content || !author) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ success: false, error: 'Title and author required' }),
+        body: JSON.stringify({ success: false, error: 'All fields required' }),
       };
     }
 
     const response = await fetch(
-      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Questions`,
+      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Answers`,
       {
         method: 'POST',
         headers: {
@@ -45,8 +45,8 @@ exports.handler = async (event, context) => {
         },
         body: JSON.stringify({
           fields: {
-            Title: title,
-            Details: details || '',
+            'Question ID': [questionId],
+            Content: content,
             Author: author,
             Created: new Date().toISOString(),
           },
@@ -56,7 +56,7 @@ exports.handler = async (event, context) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to create question');
+      throw new Error(errorData.error?.message || 'Failed to create answer');
     }
 
     const data = await response.json();
@@ -64,10 +64,10 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ success: true, questionId: data.id }),
+      body: JSON.stringify({ success: true, answerId: data.id }),
     };
   } catch (error) {
-    console.error('Error posting question:', error);
+    console.error('Error posting answer:', error);
     return {
       statusCode: 500,
       headers,
